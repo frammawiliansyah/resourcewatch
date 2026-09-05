@@ -186,10 +186,7 @@ fn discover_curves(dirs: &[(String, PathBuf)], fans: &[FanSource]) -> Vec<FanCur
     let mut out = Vec::new();
     for (name, dir) in dirs {
         for pwm_idx in 1..=4u8 {
-            if !dir
-                .join(format!("pwm{pwm_idx}_auto_point1_pwm"))
-                .exists()
-            {
+            if !dir.join(format!("pwm{pwm_idx}_auto_point1_pwm")).exists() {
                 continue;
             }
             let points = read_curve(dir, pwm_idx);

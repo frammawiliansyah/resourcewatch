@@ -1,6 +1,6 @@
 use crate::db;
-use crate::metrics::fans;
 use crate::error::AppError;
+use crate::metrics::fans;
 use crate::state::AppState;
 use axum::Json;
 use axum::extract::{Query, State};
