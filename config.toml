@@ -1,0 +1,17 @@
+[server]
+bind_addr = "0.0.0.0"
+port = 8090
+
+[polling]
+poll_interval_ms = 1000
+history_interval_secs = 10
+
+[retention]
+retention_days = 3
+cleanup_interval_secs = 3600
+
+[database]
+path = "data/history.db"
+
+[frontend]
+static_dir = "frontend/dist"

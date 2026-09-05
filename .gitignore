@@ -1,0 +1,6 @@
+/target
+/data
+/.run
+/logs
+/frontend/node_modules
+/frontend/dist

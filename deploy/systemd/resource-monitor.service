@@ -1,0 +1,19 @@
+[Unit]
+Description=Resource Monitor Service
+After=network.target
+
+[Service]
+Type=simple
+User=resmon
+WorkingDirectory=/opt/resource-monitor
+ExecStart=/opt/resource-monitor/scripts/prod.sh run
+Restart=on-failure
+RestartSec=2
+Environment=RUST_LOG=info
+# If NVML fails to initialize under this dedicated user (permission denied
+# reading /dev/nvidia*), uncomment and set this to the group that owns those
+# device nodes (commonly "video" or "render" — check with `ls -l /dev/nvidia0`):
+# SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target
