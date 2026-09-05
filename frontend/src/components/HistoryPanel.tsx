@@ -120,7 +120,7 @@ export function HistoryPanel({ latest }: { latest: Snapshot | null }) {
 
       {loading && points.length === 0 ? (
         <div className="flex h-[260px] items-center justify-center text-sm text-[var(--text-muted)]">
-          Loading history…
+          Loading history...
         </div>
       ) : points.length === 0 ? (
         <div className="flex h-[260px] items-center justify-center text-sm text-[var(--text-muted)]">

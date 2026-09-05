@@ -31,7 +31,7 @@ impl GpuInfo {
 
 /// Wraps NVML initialization. If there's no NVIDIA driver/GPU present, or
 /// NVML fails to load for any other reason, `nvml` stays `None` forever and
-/// every snapshot simply reports `available: false` — this must never crash
+/// every snapshot simply reports `available: false`. This must never crash
 /// the service on non-NVIDIA machines.
 pub struct GpuMonitor {
     nvml: Option<Nvml>,

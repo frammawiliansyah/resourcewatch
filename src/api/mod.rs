@@ -28,7 +28,7 @@ pub fn build_router(state: AppState) -> Router {
         .layer(CompressionLayer::new());
 
     // The Vite dev server proxies /api and /ws to this backend, so CORS
-    // normally isn't exercised — this permissive layer is a debug-build-only
+    // normally isn't exercised. This permissive layer is a debug-build-only
     // safety net for hitting the API directly from the Vite origin.
     if cfg!(debug_assertions) {
         router = router.layer(CorsLayer::permissive());

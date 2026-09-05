@@ -14,7 +14,7 @@ cd resourcewatch
 ```
 
 That starts the Axum backend on `:8090` and the Vite dev server with HMR on
-`:5173`. Open http://localhost:5173 — Vite proxies `/api` and `/ws` to the
+`:5173`. Open http://localhost:5173. Vite proxies `/api` and `/ws` to the
 backend, so you get frontend hot reload against a live metric stream.
 
 Use `./scripts/dev.sh logs` to tail both processes and `./scripts/dev.sh stop`
@@ -39,7 +39,7 @@ still succeeds if you touched anything under `deploy/` or `scripts/`.
 
 | Path | Purpose |
 |---|---|
-| `src/metrics/` | Hardware collectors — one module per metric family |
+| `src/metrics/` | Hardware collectors, one module per metric family |
 | `src/api/` | REST handlers (`rest.rs`) and the WebSocket stream (`ws.rs`) |
 | `src/db/` | SQLite schema, inserts, and history queries |
 | `src/retention.rs` | Background writer + retention cleanup worker |
@@ -63,7 +63,7 @@ the pattern in `src/metrics/gpu.rs`: probe once, degrade to
 
 ## Platform support
 
-Linux is the primary target. macOS is supported on a best-effort basis — some
+Linux is the primary target. macOS is supported on a best-effort basis. Some
 sensors (notably GPU via NVML, and certain temperature sensors) are unavailable
 there and correctly report as unavailable. If you can test a change on macOS,
 please mention it in the PR.

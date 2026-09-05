@@ -13,7 +13,7 @@ the potential impact.
 
 ## Deployment considerations
 
-ResourceWatch exposes detailed information about the host it runs on — running
+ResourceWatch exposes detailed information about the host it runs on: running
 processes, hardware identifiers, and resource utilisation history.
 
 **There is no authentication built in.** The default `bind_addr` is `0.0.0.0`,

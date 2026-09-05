@@ -1,5 +1,5 @@
 [Unit]
-Description=ResourceWatch — real-time system resource monitoring
+Description=ResourceWatch real-time system resource monitoring
 Documentation=https://github.com/frammawiliansyah/resourcewatch
 After=network-online.target
 Wants=network-online.target
@@ -14,13 +14,13 @@ Restart=on-failure
 RestartSec=2
 Environment=RUST_LOG=info
 
-# Port override — `deploy/install.sh --port N` rewrites this line; you can
+# Port override. `deploy/install.sh --port N` rewrites this line; you can
 # also uncomment and edit it by hand instead of editing config.toml:
 #Environment=RW_PORT=8090
 
 # If NVML fails to initialize under this dedicated user (permission denied
 # reading /dev/nvidia*), uncomment and set this to the group that owns those
-# device nodes (commonly "video" or "render" — check with `ls -l /dev/nvidia0`):
+# device nodes (commonly "video" or "render", check with `ls -l /dev/nvidia0`):
 # SupplementaryGroups=video
 
 # --- Hardening ---

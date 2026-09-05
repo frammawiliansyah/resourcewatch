@@ -19,7 +19,7 @@
 #   -h, --help          Show this help
 #
 # Linux needs root (sudo) to create the service user and write the unit file.
-# macOS must NOT be run with sudo — the agent is installed for your own user.
+# macOS must NOT be run with sudo. The agent is installed for your own user.
 set -euo pipefail
 
 APP=resourcewatch
@@ -88,7 +88,7 @@ done
 case "$(uname -s)" in
   Linux)  OS=linux ;;
   Darwin) OS=macos ;;
-  *)      die "unsupported OS '$(uname -s)' — only Linux and macOS are supported" ;;
+  *)      die "unsupported OS '$(uname -s)'. Only Linux and macOS are supported" ;;
 esac
 
 if [[ -z "$PREFIX" ]]; then
@@ -102,11 +102,11 @@ fi
 # On Linux the service user and the unit file need root; on macOS a per-user
 # LaunchAgent must NOT be installed as root or it would land in root's home.
 if [[ $OS == linux && $INSTALL_SERVICE == 1 && $UNINSTALL == 0 && $EUID -ne 0 ]]; then
-  die "Linux service install needs root — re-run with sudo:
+  die "Linux service install needs root. Re-run with sudo:
        sudo ./deploy/install.sh --port $PORT"
 fi
 if [[ $OS == macos && $EUID -eq 0 ]]; then
-  die "don't run this with sudo on macOS — the LaunchAgent installs into your own home"
+  die "don't run this with sudo on macOS. The LaunchAgent installs into your own home"
 fi
 
 # The build must not run as root even when the install does, otherwise
@@ -127,7 +127,7 @@ PLIST_DEST="$HOME/Library/LaunchAgents/$LAUNCHD_LABEL.plist"
 if [[ $UNINSTALL == 1 ]]; then
   step "Uninstalling $APP"
   if [[ $OS == linux ]]; then
-    [[ $EUID -eq 0 ]] || die "uninstall needs root — re-run with sudo:
+    [[ $EUID -eq 0 ]] || die "uninstall needs root. Re-run with sudo:
        sudo ./deploy/install.sh --uninstall"
     if systemctl list-unit-files "$APP.service" >/dev/null 2>&1; then
       systemctl disable --now "$APP" 2>/dev/null || true
@@ -149,8 +149,8 @@ fi
 step "Checking prerequisites"
 
 missing=()
-command -v cargo >/dev/null 2>&1 || missing+=("Rust toolchain (cargo) — https://rustup.rs")
-command -v npm   >/dev/null 2>&1 || missing+=("Node.js + npm (v18 or newer) — https://nodejs.org")
+command -v cargo >/dev/null 2>&1 || missing+=("Rust toolchain (cargo): https://rustup.rs")
+command -v npm   >/dev/null 2>&1 || missing+=("Node.js + npm (v18 or newer): https://nodejs.org")
 if (( ${#missing[@]} )); then
   echo "${RED}Missing required tooling:${RESET}" >&2
   printf '  - %s\n' "${missing[@]}" >&2
@@ -165,12 +165,12 @@ fi
 info "cargo $(cargo --version | awk '{print $2}'), node $(node -v), npm v$(npm -v)"
 
 if [[ $OS == linux ]] && ! command -v systemctl >/dev/null 2>&1 && [[ $INSTALL_SERVICE == 1 ]]; then
-  warn "systemd not detected — installing files only (--no-service)"
+  warn "systemd not detected, installing files only (--no-service)"
   INSTALL_SERVICE=0
 fi
 
 # A port that's already taken makes the service crash-loop after install,
-# which is a confusing first-run experience — catch it up front instead.
+# which is a confusing first-run experience, so catch it up front instead.
 if command -v ss >/dev/null 2>&1; then
   ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE "[:.]$PORT\$" && warn "port $PORT already appears to be in use"
 elif command -v lsof >/dev/null 2>&1; then
@@ -197,7 +197,7 @@ install -m 0755 "$REPO_ROOT/target/release/$APP" "$PREFIX/$APP"
 rm -rf "$PREFIX/frontend/dist"
 cp -R "$REPO_ROOT/frontend/dist" "$PREFIX/frontend/dist"
 
-# Never clobber an existing config — an upgrade must keep the operator's edits.
+# Never clobber an existing config; an upgrade must keep the operator's edits.
 if [[ -f "$PREFIX/config.toml" ]]; then
   info "keeping existing config.toml (new default saved as config.toml.new)"
   cp "$REPO_ROOT/config.toml" "$PREFIX/config.toml.new"
@@ -243,7 +243,7 @@ if [[ $OS == linux ]]; then
   if systemctl is-active --quiet "$APP"; then
     step "${GREEN}ResourceWatch is running${RESET}"
   else
-    warn "service did not become active — inspect with: journalctl -u $APP -n 50"
+    warn "service did not become active. Inspect with: journalctl -u $APP -n 50"
   fi
   info "Dashboard: ${BOLD}http://localhost:$PORT${RESET}"
   echo
@@ -265,7 +265,7 @@ else
   if launchctl list | grep -q "$LAUNCHD_LABEL"; then
     step "${GREEN}ResourceWatch is running${RESET}"
   else
-    warn "agent did not start — inspect $PREFIX/logs/resourcewatch.err.log"
+    warn "agent did not start. Inspect $PREFIX/logs/resourcewatch.err.log"
   fi
   info "Dashboard: ${BOLD}http://localhost:$PORT${RESET}"
   echo

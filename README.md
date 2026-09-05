@@ -5,7 +5,7 @@
 **Real-time system resource monitoring with a single-binary web dashboard.**
 
 Rust + Axum backend streaming live CPU, RAM, GPU, disk, network, temperature and
-battery metrics over WebSocket to a React dashboard — with persistent history in
+battery metrics over WebSocket to a React dashboard, with persistent history in
 SQLite and zero external services.
 
 [![CI](https://github.com/frammawiliansyah/resourcewatch/actions/workflows/ci.yml/badge.svg)](https://github.com/frammawiliansyah/resourcewatch/actions/workflows/ci.yml)
@@ -22,12 +22,12 @@ Most monitoring stacks want a time-series database, an agent, and a dashboard
 service. ResourceWatch is one ~7 MB binary that serves its own dashboard and
 writes history to a local SQLite file.
 
-- **No dependencies to operate** — no Prometheus, no Grafana, no Docker required.
-- **One port, one process** — the release binary serves the REST API, the
+- **No dependencies to operate**: no Prometheus, no Grafana, no Docker required.
+- **One port, one process**: the release binary serves the REST API, the
   WebSocket stream, and the compiled frontend together.
-- **Degrades gracefully** — missing GPU, sensors, or battery are reported as
+- **Degrades gracefully**: missing GPU, sensors, or battery are reported as
   unavailable rather than crashing the service.
-- **Honest resource usage** — an idle collector tick is cheap enough to run
+- **Honest resource usage**: an idle collector tick is cheap enough to run
   continuously on a laptop or a small VPS.
 
 ## Features
@@ -37,7 +37,7 @@ writes history to a local SQLite file.
 | **Live streaming** | WebSocket (`/ws`) push on every collector tick (default 1s) |
 | **CPU** | Aggregate + per-core utilisation, package temperature |
 | **Memory** | RAM and swap used/total/available |
-| **GPU** | NVIDIA via NVML — utilisation, VRAM, temperature, power draw, fan |
+| **GPU** | NVIDIA via NVML: utilisation, VRAM, temperature, power draw, fan |
 | **Storage** | Per-mount capacity and usage |
 | **Disk I/O** | Read/write throughput per second |
 | **Network** | Per-interface RX/TX throughput |
@@ -47,7 +47,7 @@ writes history to a local SQLite file.
 
 ## Requirements
 
-- **Rust** toolchain (2024 edition) — install via [rustup](https://rustup.rs)
+- **Rust** toolchain (2024 edition), install via [rustup](https://rustup.rs)
 - **Node.js** v18+ and npm
 - **Linux** (primary target) or **macOS**
 - *Optional:* NVIDIA driver for GPU metrics; `lm-sensors` on Linux for
@@ -61,7 +61,7 @@ writes history to a local SQLite file.
 git clone https://github.com/frammawiliansyah/resourcewatch.git
 cd resourcewatch
 sudo ./deploy/install.sh          # Linux
-# ./deploy/install.sh             # macOS — no sudo
+# ./deploy/install.sh             # macOS, no sudo
 ```
 
 The installer checks prerequisites, builds the binary and frontend, installs
@@ -83,7 +83,7 @@ open **http://localhost:8090**.
 | macOS | launchd agent `io.resourcewatch.agent` (per-user, no root) | `~/.local/share/resourcewatch` |
 
 Re-running the installer upgrades an existing installation. Your `config.toml`
-is never overwritten — the new defaults are written to `config.toml.new`.
+is never overwritten. The new defaults are written to `config.toml.new`.
 
 ### Managing the service
 
@@ -114,7 +114,7 @@ tail -f ~/.local/share/resourcewatch/logs/resourcewatch.log
 ## Configuration
 
 Settings resolve in order of increasing precedence:
-**built-in defaults → `config.toml` → environment variables**.
+**built-in defaults, then `config.toml`, then environment variables**.
 
 ```toml
 [server]
@@ -167,7 +167,7 @@ unit and launchd agent use:
 | `/api/health` | `GET` | Status, version, uptime in seconds |
 | `/api/config` | `GET` | Effective runtime config and GPU availability |
 | `/api/snapshot` | `GET` | Latest full metric snapshot |
-| `/api/history` | `GET` | Historical series — see parameters below |
+| `/api/history` | `GET` | Historical series, see parameters below |
 | `/ws` | `WS` | Live snapshot stream, one JSON message per tick |
 
 ### `GET /api/history`
@@ -199,7 +199,7 @@ points instead of a series.
 ./scripts/dev.sh stop
 ```
 
-Open **http://localhost:5173** — Vite proxies `/api` and `/ws` to the backend,
+Open **http://localhost:5173**. Vite proxies `/api` and `/ws` to the backend,
 so the frontend hot-reloads against live metrics.
 
 <details>
@@ -272,9 +272,9 @@ resourcewatch/
 
 ### Tech stack
 
-**Backend** — Rust 2024, Tokio, Axum, sysinfo, nvml-wrapper, rusqlite (bundled
+**Backend**: Rust 2024, Tokio, Axum, sysinfo, nvml-wrapper, rusqlite (bundled
 SQLite), tower-http
-**Frontend** — React 19, TypeScript, Vite, Tailwind CSS v4, uPlot, Lucide
+**Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, uPlot, Lucide
 
 ---
 
@@ -285,7 +285,7 @@ SQLite), tower-http
 
 NVML only supports NVIDIA GPUs. Verify the driver works with `nvidia-smi`. If
 that succeeds but the service still reports no GPU, the dedicated
-`resourcewatch` user likely cannot read `/dev/nvidia*` — check ownership with
+`resourcewatch` user likely cannot read `/dev/nvidia*`. Check ownership with
 `ls -l /dev/nvidia0` and uncomment `SupplementaryGroups=video` in
 `/etc/systemd/system/resourcewatch.service`, then
 `sudo systemctl daemon-reload && sudo systemctl restart resourcewatch`.
@@ -318,7 +318,7 @@ freshly started instance has nothing to plot yet. Data older than
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
 development workflow, the checks to run before a PR, and a walkthrough of adding
 a new metric.
 

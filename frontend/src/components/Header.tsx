@@ -22,7 +22,7 @@ export function Header({ connected, lastTs }: { connected: boolean; lastTs: numb
           className="h-2 w-2 rounded-full"
           style={{ background: connected ? 'var(--good)' : 'var(--bad)' }}
         />
-        <span>{connected ? 'Live' : 'Reconnecting…'}</span>
+        <span>{connected ? 'Live' : 'Reconnecting...'}</span>
         {secondsAgo !== null && (
           <span className="hidden sm:inline">· updated {secondsAgo}s ago</span>
         )}

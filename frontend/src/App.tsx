@@ -21,7 +21,7 @@ export default function App() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 p-4 sm:p-6">
         {!snapshot ? (
           <div className="flex h-64 items-center justify-center text-sm text-[var(--text-muted)]">
-            Connecting to resource monitor…
+            Connecting to ResourceWatch...
           </div>
         ) : (
           <>

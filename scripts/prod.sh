@@ -5,12 +5,12 @@
 #
 # If the "resourcewatch" systemd unit is already installed (see
 # deploy/install.sh), start/stop/restart/status/logs transparently delegate
-# to systemctl/journalctl instead of managing the process directly — so the
+# to systemctl/journalctl instead of managing the process directly, so the
 # same `./scripts/prod.sh start|stop|status` works whether or not the
 # service has been installed under systemd yet.
 #
 # Usage: ./scripts/prod.sh build|start|stop|restart|status|logs|run [-p PORT]
-#   run  — foreground, no daemonizing; this is what the systemd unit's
+#   run  = foreground, no daemonizing; this is what the systemd unit's
 #          ExecStart invokes (see deploy/systemd/resourcewatch.service).
 set -euo pipefail
 
@@ -95,7 +95,7 @@ standalone_start() {
   sleep 1
   if is_alive; then
     local port="${RW_PORT:-$(grep -A3 '^\[server\]' "$ROOT/config.toml" 2>/dev/null | grep '^port' | grep -o '[0-9]\+' | head -1)}"
-    echo "started (pid $(cat "$PID_FILE")) — http://127.0.0.1:${port:-8090}"
+    echo "started (pid $(cat "$PID_FILE")) at http://127.0.0.1:${port:-8090}"
     echo "logs: $LOG_FILE"
   else
     echo "failed to start, see $LOG_FILE" >&2
@@ -137,11 +137,11 @@ case "$cmd" in
     build
     ;;
   run)
-    # Foreground, for systemd's ExecStart — fails fast instead of building
+    # Foreground, for systemd's ExecStart. Fails fast instead of building
     # under supervision; run '$0 build' first if the binary is missing.
     bin="$(resolve_bin)"
     if [[ ! -x "$bin" ]]; then
-      echo "release binary not found at $bin — run '$0 build' first" >&2
+      echo "release binary not found at $bin, run '$0 build' first" >&2
       exit 1
     fi
     cd "$ROOT"
@@ -149,7 +149,7 @@ case "$cmd" in
     ;;
   start)
     if systemd_installed; then
-      echo "Managed by systemd — delegating to systemctl"
+      echo "Managed by systemd, delegating to systemctl"
       sudo systemctl start "$SERVICE_NAME"
       systemctl status "$SERVICE_NAME" --no-pager
     else
@@ -189,7 +189,7 @@ case "$cmd" in
     echo "Usage: $0 {build|start|stop|restart|status|logs}" >&2
     echo "  build   cargo build --release + npm run build" >&2
     echo "  start   run the release binary (single port, FE+BE together)" >&2
-    echo "          — delegates to systemctl if the systemd unit is installed" >&2
+    echo "          delegates to systemctl if the systemd unit is installed" >&2
     exit 1
     ;;
 esac

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Development runner: backend (cargo run, auto-rebuild) + frontend (Vite dev
 # server with HMR, proxying /api and /ws to the backend). Two ports in dev
-# (backend :8090, frontend :5173) — use scripts/prod.sh for the single-port
+# (backend :8090, frontend :5173). Use scripts/prod.sh for the single-port
 # production build.
 #
 # Usage: ./scripts/dev.sh start|stop|restart|status|logs

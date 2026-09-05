@@ -6,7 +6,7 @@ use tokio::sync::mpsc;
 /// Owns the single write connection to SQLite. Runs on a dedicated blocking
 /// thread: every history snapshot handed over the channel is inserted, and
 /// after each insert we check whether enough wall-clock time has passed to
-/// run the retention cleanup — serializing both on the same connection so
+/// run the retention cleanup, serializing both on the same connection so
 /// there's never write contention between them.
 pub fn spawn_writer(
     db_path: String,
