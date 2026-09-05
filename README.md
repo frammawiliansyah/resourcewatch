@@ -1,8 +1,8 @@
-# Resource Monitor
+# ResourceWatch
 
-Lightweight system resource monitoring tool built with Rust (Axum backend) and React + TypeScript + Vite + Tailwind CSS (frontend).
+Lightweight, real-time system resource monitoring & metrics logging platform built with Rust (Axum backend) and React + TypeScript + Vite + Tailwind CSS (frontend).
 
-Real-time streaming via WebSocket, persistent historical metric logging into SQLite, and embedded single-binary deployment.
+Real-time streaming via WebSocket, persistent historical metric logging into SQLite, and embedded single-binary production deployment.
 
 ---
 
@@ -32,7 +32,7 @@ Real-time streaming via WebSocket, persistent historical metric logging into SQL
 ## Project Structure
 
 ```
-resource/
+resourcewatch/
 ├── Cargo.toml               # Rust dependencies & config
 ├── config.toml              # Server, polling, retention, DB configuration
 ├── deploy/
