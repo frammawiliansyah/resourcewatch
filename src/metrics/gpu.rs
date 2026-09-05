@@ -1,5 +1,5 @@
-use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
 use nvml_wrapper::Nvml;
+use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]

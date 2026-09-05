@@ -82,7 +82,7 @@ case "$cmd" in
     start_one "backend " "$BACKEND_PID_FILE" "$BACKEND_LOG" "$ROOT" "cargo run"
     start_one "frontend" "$FRONTEND_PID_FILE" "$FRONTEND_LOG" "$ROOT/frontend" "npm run dev"
     echo
-    echo "Backend:  http://127.0.0.1:${RM_PORT:-8090} (REST + WS)"
+    echo "Backend:  http://127.0.0.1:${RW_PORT:-8090} (REST + WS)"
     echo "Frontend: http://127.0.0.1:5173 (HMR, proxies /api and /ws)"
     ;;
   stop)

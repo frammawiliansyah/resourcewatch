@@ -1,75 +1,133 @@
+<div align="center">
+
 # ResourceWatch
 
-Lightweight, real-time system resource monitoring & metrics logging platform built with Rust (Axum backend) and React + TypeScript + Vite + Tailwind CSS (frontend).
+**Real-time system resource monitoring with a single-binary web dashboard.**
 
-Real-time streaming via WebSocket, persistent historical metric logging into SQLite, and embedded single-binary production deployment.
+Rust + Axum backend streaming live CPU, RAM, GPU, disk, network, temperature and
+battery metrics over WebSocket to a React dashboard — with persistent history in
+SQLite and zero external services.
+
+[![CI](https://github.com/frammawiliansyah/resourcewatch/actions/workflows/ci.yml/badge.svg)](https://github.com/frammawiliansyah/resourcewatch/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/rust-2024_edition-orange.svg)](https://www.rust-lang.org/)
+
+</div>
 
 ---
+
+## Why ResourceWatch
+
+Most monitoring stacks want a time-series database, an agent, and a dashboard
+service. ResourceWatch is one ~7 MB binary that serves its own dashboard and
+writes history to a local SQLite file.
+
+- **No dependencies to operate** — no Prometheus, no Grafana, no Docker required.
+- **One port, one process** — the release binary serves the REST API, the
+  WebSocket stream, and the compiled frontend together.
+- **Degrades gracefully** — missing GPU, sensors, or battery are reported as
+  unavailable rather than crashing the service.
+- **Honest resource usage** — an idle collector tick is cheap enough to run
+  continuously on a laptop or a small VPS.
 
 ## Features
 
-- **Real-time Monitoring**: WebSocket stream (`/ws`) for live system metrics (CPU, RAM, GPU/NVML, Disk I/O, Storage, Network, Temperature, Battery, Processes).
-- **Historical Metrics**: SQLite database storage with configurable retention policy and range queries (`/api/history`).
-- **REST API**: Endpoints for health check, runtime config, and latest metric snapshot.
-- **Single Port in Production**: Backend serves both the API and the compiled frontend static files on one port (default `8090`).
-- **Configurable Runtime**: Custom port via CLI flags, environment variables, or config file.
+| | |
+|---|---|
+| **Live streaming** | WebSocket (`/ws`) push on every collector tick (default 1s) |
+| **CPU** | Aggregate + per-core utilisation, package temperature |
+| **Memory** | RAM and swap used/total/available |
+| **GPU** | NVIDIA via NVML — utilisation, VRAM, temperature, power draw, fan |
+| **Storage** | Per-mount capacity and usage |
+| **Disk I/O** | Read/write throughput per second |
+| **Network** | Per-interface RX/TX throughput |
+| **Battery** | Charge percentage and charging status |
+| **Processes** | Top processes by CPU and memory |
+| **History** | SQLite-backed range queries with configurable retention |
+
+## Requirements
+
+- **Rust** toolchain (2024 edition) — install via [rustup](https://rustup.rs)
+- **Node.js** v18+ and npm
+- **Linux** (primary target) or **macOS**
+- *Optional:* NVIDIA driver for GPU metrics; `lm-sensors` on Linux for
+  temperature readings
 
 ---
 
-## Tech Stack & Requirements
+## Quick start
 
-### Tech Stack
-- **Backend**: Rust 2024 edition, Tokio, Axum, Sysinfo, NVML (NVIDIA), Rusqlite (SQLite)
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, uPlot, Lucide React
-
-### Prerequisites
-- **Rust toolchain** (cargo, rustc): `rustup` recommended
-- **Node.js** (v18+) & **npm**
-- **NVIDIA Driver / NVML** *(optional, for GPU metrics)*
-
----
-
-## Project Structure
-
+```bash
+git clone https://github.com/frammawiliansyah/resourcewatch.git
+cd resourcewatch
+sudo ./deploy/install.sh          # Linux
+# ./deploy/install.sh             # macOS — no sudo
 ```
-resourcewatch/
-├── Cargo.toml               # Rust dependencies & config
-├── config.toml              # Server, polling, retention, DB configuration
-├── deploy/
-│   ├── install.sh           # Automated systemd installer script
-│   └── systemd/             # systemd service unit file
-├── frontend/                # Vite + React + TypeScript web client
-├── scripts/
-│   ├── dev.sh               # Runner for development mode (hot reload)
-│   └── prod.sh              # Runner for production build & process management
-└── src/                     # Rust backend source
-    ├── api/                 # REST & WebSocket endpoints
-    ├── db/                  # SQLite storage & schema
-    ├── metrics/             # Hardware collectors (CPU, RAM, GPU, etc.)
-    ├── config.rs
-    ├── main.rs
-    ├── retention.rs         # Data retention & cleanup worker
-    └── state.rs
+
+The installer checks prerequisites, builds the binary and frontend, installs
+them, and registers a background service that starts on boot. When it finishes,
+open **http://localhost:8090**.
+
+### Installer options
+
+```bash
+./deploy/install.sh --port 10001            # listen on a different port
+./deploy/install.sh --prefix /srv/rw        # custom install directory
+./deploy/install.sh --no-service            # build and install files only
+./deploy/install.sh --uninstall             # stop and remove the service
 ```
+
+| Platform | Service | Install prefix |
+|---|---|---|
+| Linux | systemd unit `resourcewatch`, dedicated unprivileged user | `/opt/resourcewatch` |
+| macOS | launchd agent `io.resourcewatch.agent` (per-user, no root) | `~/.local/share/resourcewatch` |
+
+Re-running the installer upgrades an existing installation. Your `config.toml`
+is never overwritten — the new defaults are written to `config.toml.new`.
+
+### Managing the service
+
+<details>
+<summary><b>Linux (systemd)</b></summary>
+
+```bash
+sudo systemctl status resourcewatch
+sudo systemctl restart resourcewatch
+sudo systemctl stop resourcewatch
+journalctl -u resourcewatch -f
+```
+</details>
+
+<details>
+<summary><b>macOS (launchd)</b></summary>
+
+```bash
+launchctl list | grep io.resourcewatch.agent
+launchctl kickstart -k "gui/$UID/io.resourcewatch.agent"   # restart
+launchctl unload ~/Library/LaunchAgents/io.resourcewatch.agent.plist
+tail -f ~/.local/share/resourcewatch/logs/resourcewatch.log
+```
+</details>
 
 ---
 
 ## Configuration
 
-### 1. Configuration File (`config.toml`)
+Settings resolve in order of increasing precedence:
+**built-in defaults → `config.toml` → environment variables**.
 
 ```toml
 [server]
-bind_addr = "0.0.0.0"
+bind_addr = "0.0.0.0"        # use "127.0.0.1" to restrict to localhost
 port = 8090
 
 [polling]
-poll_interval_ms = 1000      # Real-time metrics tick rate
-history_interval_secs = 10   # Interval to write snapshots to SQLite
+poll_interval_ms = 1000      # live metric tick rate
+history_interval_secs = 10   # how often a snapshot is persisted
 
 [retention]
-retention_days = 3           # History data retention period
-cleanup_interval_secs = 3600 # Cleanup loop frequency
+retention_days = 3           # history older than this is deleted
+cleanup_interval_secs = 3600 # how often the cleanup worker runs
 
 [database]
 path = "data/history.db"
@@ -78,173 +136,192 @@ path = "data/history.db"
 static_dir = "frontend/dist"
 ```
 
-### 2. Environment Variables & Overrides
+Every setting has an environment variable override, which is what the systemd
+unit and launchd agent use:
 
-Configuration can be overridden at runtime without editing `config.toml`:
-
-| Variable | Description | Default |
+| Variable | Overrides | Default |
 |---|---|---|
-| `RM_PORT` | Port number to bind | `8090` |
-| `RM_BIND_ADDR` | Bind address | `0.0.0.0` |
-| `RM_CONFIG_PATH` | Path to custom config file | `config.toml` |
-| `RM_POLL_INTERVAL_MS` | Metric polling tick in ms | `1000` |
-| `RM_HISTORY_INTERVAL_SECS` | History snapshot write interval in seconds | `10` |
-| `RM_RETENTION_DAYS` | Database retention in days | `3` |
-| `RM_DB_PATH` | SQLite DB file path | `data/history.db` |
-| `RM_STATIC_DIR` | Frontend static bundle directory | `frontend/dist` |
+| `RW_CONFIG_PATH` | Path to the config file itself | `config.toml` |
+| `RW_BIND_ADDR` | `server.bind_addr` | `0.0.0.0` |
+| `RW_PORT` | `server.port` | `8090` |
+| `RW_POLL_INTERVAL_MS` | `polling.poll_interval_ms` | `1000` |
+| `RW_HISTORY_INTERVAL_SECS` | `polling.history_interval_secs` | `10` |
+| `RW_RETENTION_DAYS` | `retention.retention_days` | `3` |
+| `RW_CLEANUP_INTERVAL_SECS` | `retention.cleanup_interval_secs` | `3600` |
+| `RW_DB_PATH` | `database.path` | `data/history.db` |
+| `RW_STATIC_DIR` | `frontend.static_dir` | `frontend/dist` |
+| `RUST_LOG` | Log verbosity (`error`/`warn`/`info`/`debug`/`trace`) | `info` |
+
+> [!WARNING]
+> ResourceWatch has **no built-in authentication** and exposes process names and
+> hardware details. The default `bind_addr` listens on all interfaces. On any
+> untrusted network, bind to `127.0.0.1`, or place it behind a reverse proxy
+> that handles TLS and auth. See [SECURITY.md](SECURITY.md).
 
 ---
 
-## Development Setup
+## API reference
 
-In development mode:
-- Backend runs on `http://localhost:8090`
-- Frontend runs on `http://localhost:5173` with Vite HMR (proxies `/api` and `/ws` to backend)
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/health` | `GET` | Status, version, uptime in seconds |
+| `/api/config` | `GET` | Effective runtime config and GPU availability |
+| `/api/snapshot` | `GET` | Latest full metric snapshot |
+| `/api/history` | `GET` | Historical series — see parameters below |
+| `/ws` | `WS` | Live snapshot stream, one JSON message per tick |
 
-### 1. Using Helper Script (Recommended)
+### `GET /api/history`
+
+| Parameter | Required | Description |
+|---|---|---|
+| `metric` | yes | `cpu`, `ram`, `gpu`, `network`, `diskio`, `storage`, `temperature`, `battery` |
+| `range` | no | `15m`, `1h`, `6h`, `24h`, `3d` (default `1h`) |
+| `from` / `to` | no | Explicit Unix millisecond bounds; overrides `range` |
+| `mount` | no | Filter `storage` to a specific mount point |
+| `iface` | no | Filter `network` to a specific interface |
 
 ```bash
-# Start both backend and frontend dev servers
-./scripts/dev.sh start
+curl 'http://localhost:8090/api/history?metric=cpu&range=6h'
+curl 'http://localhost:8090/api/history?metric=storage&mount=/'
+```
 
-# Check status
+Requesting `metric=storage` without `mount` returns the list of available mount
+points instead of a series.
+
+---
+
+## Development
+
+```bash
+./scripts/dev.sh start     # backend :8090 + Vite HMR :5173
+./scripts/dev.sh logs      # tail both processes
 ./scripts/dev.sh status
-
-# View logs
-./scripts/dev.sh logs
-
-# Stop dev servers
 ./scripts/dev.sh stop
-
-# Restart dev servers
-./scripts/dev.sh restart
 ```
 
-### 2. Manual Development Setup
+Open **http://localhost:5173** — Vite proxies `/api` and `/ws` to the backend,
+so the frontend hot-reloads against live metrics.
 
-**Backend:**
+<details>
+<summary>Manual setup</summary>
+
 ```bash
-cargo run
+cargo run                                   # backend
+cd frontend && npm install && npm run dev   # frontend
 ```
+</details>
 
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Production build without the installer
 
----
+`scripts/prod.sh` builds and runs the release binary directly. If the systemd
+unit is installed it transparently delegates to `systemctl`.
 
-## Production Setup & Run
-
-In production mode, the single Rust binary serves both API and static frontend assets on a single port.
-
-### 1. Using Helper Script (`scripts/prod.sh`)
-
-#### Build:
 ```bash
 ./scripts/prod.sh build
-```
-*(Runs `cargo build --release` and `npm run build`)*
-
-#### Start / Run:
-```bash
-# Default port (8090)
-./scripts/prod.sh start
-
-# Custom port via flag (-p / --port)
 ./scripts/prod.sh start -p 10001
-./scripts/prod.sh restart -p 10001
-
-# Custom port via environment variable
-RM_PORT=10001 ./scripts/prod.sh start
-
-# Run in foreground (non-daemon)
-./scripts/prod.sh run -p 10001
-```
-
-#### Process Management:
-```bash
-# Check status
 ./scripts/prod.sh status
-
-# View logs (tail -f)
 ./scripts/prod.sh logs
-
-# Restart
-./scripts/prod.sh restart
-
-# Stop
 ./scripts/prod.sh stop
 ```
 
 ---
 
-### 2. Manual Build & Run
+## Architecture
 
-#### Step 1: Build Frontend
-```bash
-cd frontend
-npm install
-npm run build
-cd ..
+```mermaid
+flowchart LR
+    HW[Hardware<br/>procfs / sysinfo / NVML] --> C[Collector<br/>tick every poll_interval_ms]
+    C --> W[watch channel]
+    C --> M[mpsc channel]
+    W --> WS["/ws<br/>WebSocket fan-out"]
+    W --> S["/api/snapshot"]
+    M --> R[Retention worker]
+    R --> DB[(SQLite<br/>history.db)]
+    DB --> H["/api/history"]
+    WS --> UI[React dashboard]
+    S --> UI
+    H --> UI
 ```
 
-#### Step 2: Build Backend
-```bash
-cargo build --release
+A single collector task polls the hardware and publishes each snapshot to a
+`watch` channel, so any number of WebSocket clients share one collection pass.
+Every *n*th snapshot is forwarded to the retention worker, which writes it to
+SQLite and periodically prunes rows past the retention window.
+
+### Project layout
+
+```
+resourcewatch/
+├── src/
+│   ├── api/            # REST handlers + WebSocket stream
+│   ├── db/             # SQLite schema, inserts, history queries
+│   ├── metrics/        # One collector module per metric family
+│   ├── config.rs       # Config file + env override resolution
+│   ├── retention.rs    # History writer & cleanup worker
+│   └── main.rs
+├── frontend/           # React 19 + TypeScript + Vite + Tailwind v4
+├── deploy/
+│   ├── install.sh      # One-time cross-platform setup
+│   ├── systemd/        # Linux service unit
+│   └── launchd/        # macOS agent template
+├── scripts/
+│   ├── dev.sh          # Dev runner (backend + Vite HMR)
+│   └── prod.sh         # Production build & process management
+└── config.toml
 ```
 
-#### Step 3: Run Binary
-```bash
-# Default port from config.toml (8090)
-./target/release/resource-monitor
+### Tech stack
 
-# Custom port via environment variable
-RM_PORT=10001 ./target/release/resource-monitor
-```
-
-Dashboard access: `http://localhost:10001` (or your configured port).
+**Backend** — Rust 2024, Tokio, Axum, sysinfo, nvml-wrapper, rusqlite (bundled
+SQLite), tower-http
+**Frontend** — React 19, TypeScript, Vite, Tailwind CSS v4, uPlot, Lucide
 
 ---
 
-## Systemd Service Installation (Linux Server)
+## Troubleshooting
 
-Deploy as background system service under `/opt/resource-monitor`:
+<details>
+<summary><b>GPU metrics show as unavailable</b></summary>
 
-```bash
-sudo ./deploy/install.sh
-```
+NVML only supports NVIDIA GPUs. Verify the driver works with `nvidia-smi`. If
+that succeeds but the service still reports no GPU, the dedicated
+`resourcewatch` user likely cannot read `/dev/nvidia*` — check ownership with
+`ls -l /dev/nvidia0` and uncomment `SupplementaryGroups=video` in
+`/etc/systemd/system/resourcewatch.service`, then
+`sudo systemctl daemon-reload && sudo systemctl restart resourcewatch`.
+</details>
 
-### Manage Service:
-```bash
-sudo systemctl status resource-monitor
-sudo systemctl restart resource-monitor
-sudo systemctl stop resource-monitor
-journalctl -u resource-monitor -f
-```
+<details>
+<summary><b>No temperature readings</b></summary>
 
-### Change Port in Systemd Service:
-Edit `/etc/systemd/system/resource-monitor.service` or `/opt/resource-monitor/config.toml`:
-```ini
-# Add Environment variable under [Service] section:
-Environment=RM_PORT=10001
-```
-Then reload & restart:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl restart resource-monitor
-```
+On Linux install and configure `lm-sensors` (`sudo apt install lm-sensors &&
+sudo sensors-detect`). Inside containers and most VMs no sensors are exposed at
+all. macOS does not expose CPU temperature without elevated privileges.
+</details>
+
+<details>
+<summary><b>Port already in use</b></summary>
+
+Reinstall with a different port (`sudo ./deploy/install.sh --port 10001`), or
+set `Environment=RW_PORT=10001` in the unit file and restart.
+</details>
+
+<details>
+<summary><b>History charts are empty</b></summary>
+
+Snapshots are only written every `history_interval_secs` (default 10s), so a
+freshly started instance has nothing to plot yet. Data older than
+`retention_days` is deleted permanently.
+</details>
 
 ---
 
-## API Reference
+## Contributing
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/api/health` | `GET` | Health check and uptime |
-| `/api/config` | `GET` | System config & hardware availability |
-| `/api/snapshot` | `GET` | Latest full hardware metric snapshot |
-| `/api/history` | `GET` | Query metric history (`?metric=cpu&range=1h`) |
-| `/ws` | `WS` | Real-time WebSocket metric stream |
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the
+development workflow, the checks to run before a PR, and a walkthrough of adding
+a new metric.
+
+## License
+
+[MIT](LICENSE) © Framma Wiliansyah

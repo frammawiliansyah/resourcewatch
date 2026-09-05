@@ -22,7 +22,7 @@ async fn main() {
 
     let config = Config::load();
     tracing::info!(
-        "starting resource-monitor on {}:{}",
+        "starting resourcewatch on {}:{}",
         config.server.bind_addr,
         config.server.port
     );

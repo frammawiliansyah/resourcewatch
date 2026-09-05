@@ -1,7 +1,7 @@
+use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 pub struct AppError(pub StatusCode, pub Value);
 

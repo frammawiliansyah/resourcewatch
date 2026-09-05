@@ -1,6 +1,6 @@
 use crate::metrics::Snapshot;
-use rusqlite::{params, Connection};
-use serde_json::{json, Value};
+use rusqlite::{Connection, params};
+use serde_json::{Value, json};
 use std::path::Path;
 
 pub fn open(path: &str) -> rusqlite::Result<Connection> {

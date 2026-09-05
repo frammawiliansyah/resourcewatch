@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS launchd agent template for ResourceWatch.
+
+  deploy/install.sh renders this file: __PREFIX__ is replaced with the install
+  directory and __PORT__ with the chosen port, then it is written to
+  ~/Library/LaunchAgents/io.resourcewatch.agent.plist and loaded with launchctl.
+
+  It runs as a per-user LaunchAgent (not a system-wide LaunchDaemon) so it needs
+  no root privileges and starts on login.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>io.resourcewatch.agent</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__PREFIX__/resourcewatch</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__PREFIX__</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>info</string>
+        <key>RW_PORT</key>
+        <string>__PORT__</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__PREFIX__/logs/resourcewatch.log</string>
+    <key>StandardErrorPath</key>
+    <string>__PREFIX__/logs/resourcewatch.err.log</string>
+</dict>
+</plist>

@@ -1,7 +1,13 @@
 [package]
-name = "resource-monitor"
+name = "resourcewatch"
 version = "0.1.0"
 edition = "2024"
+description = "Real-time system resource monitoring with WebSocket streaming, SQLite history, and a single-binary web dashboard"
+repository = "https://github.com/frammawiliansyah/resourcewatch"
+license = "MIT"
+readme = "README.md"
+keywords = ["monitoring", "metrics", "system", "dashboard", "observability"]
+categories = ["command-line-utilities", "web-programming"]
 
 [dependencies]
 axum = { version = "0.8.9", features = ["ws"] }

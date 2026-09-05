@@ -15,7 +15,7 @@ export function Header({ connected, lastTs }: { connected: boolean; lastTs: numb
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3 sm:px-6">
       <div className="flex items-center gap-2">
         <Activity size={20} className="text-[var(--accent)]" />
-        <h1 className="text-base font-semibold tracking-tight sm:text-lg">Resource Monitor</h1>
+        <h1 className="text-base font-semibold tracking-tight sm:text-lg">ResourceWatch</h1>
       </div>
       <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
         <span

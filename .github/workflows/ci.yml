@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  backend:
+    name: Backend (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build (release)
+        run: cargo build --release
+
+      - name: Test
+        run: cargo test
+
+  frontend:
+    name: Frontend (TypeScript)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck and build
+        run: npm run build
+
+  install-script:
+    name: Install script
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Shell syntax check
+        run: bash -n deploy/install.sh scripts/dev.sh scripts/prod.sh
+
+      - name: End-to-end install (files only)
+        run: ./deploy/install.sh --no-service --prefix "$RUNNER_TEMP/rw" --port 8123
+
+      - name: Smoke test the installed binary
+        run: |
+          cd "$RUNNER_TEMP/rw"
+          ./resourcewatch &
+          pid=$!
+          sleep 5
+          curl --fail --silent http://127.0.0.1:8123/api/health
+          curl --fail --silent --output /dev/null http://127.0.0.1:8123/
+          kill $pid

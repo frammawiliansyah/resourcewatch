@@ -1,10 +1,10 @@
 use crate::db;
 use crate::error::AppError;
 use crate::state::AppState;
-use axum::extract::{Query, State};
 use axum::Json;
+use axum::extract::{Query, State};
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub async fn health(State(state): State<AppState>) -> Json<Value> {
@@ -84,9 +84,8 @@ pub async fn history(
         (Some(from), Some(to)) => (from, to),
         _ => {
             let range = params.range.as_deref().unwrap_or("1h");
-            let span = range_to_millis(range).ok_or_else(|| {
-                AppError::bad_request(format!("unknown range '{range}'"))
-            })?;
+            let span = range_to_millis(range)
+                .ok_or_else(|| AppError::bad_request(format!("unknown range '{range}'")))?;
             (now_millis - span, now_millis)
         }
     };

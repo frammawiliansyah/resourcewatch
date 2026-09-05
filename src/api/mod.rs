@@ -2,8 +2,8 @@ pub mod rest;
 pub mod ws;
 
 use crate::state::AppState;
-use axum::routing::get;
 use axum::Router;
+use axum::routing::get;
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::services::{ServeDir, ServeFile};
@@ -18,8 +18,7 @@ pub fn build_router(state: AppState) -> Router {
 
     let static_dir = &state.config.frontend.static_dir;
     let index_file = format!("{static_dir}/index.html");
-    let serve_dir =
-        ServeDir::new(static_dir).not_found_service(ServeFile::new(index_file));
+    let serve_dir = ServeDir::new(static_dir).not_found_service(ServeFile::new(index_file));
 
     let mut router = Router::new()
         .nest("/api", api)

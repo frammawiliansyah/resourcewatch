@@ -3,7 +3,7 @@
 # the single compiled binary, which serves the REST/WS API and the built
 # frontend on ONE port (no separate frontend server in production).
 #
-# If the "resource-monitor" systemd unit is already installed (see
+# If the "resourcewatch" systemd unit is already installed (see
 # deploy/install.sh), start/stop/restart/status/logs transparently delegate
 # to systemctl/journalctl instead of managing the process directly — so the
 # same `./scripts/prod.sh start|stop|status` works whether or not the
@@ -11,7 +11,7 @@
 #
 # Usage: ./scripts/prod.sh build|start|stop|restart|status|logs|run [-p PORT]
 #   run  — foreground, no daemonizing; this is what the systemd unit's
-#          ExecStart invokes (see deploy/systemd/resource-monitor.service).
+#          ExecStart invokes (see deploy/systemd/resourcewatch.service).
 set -euo pipefail
 
 # Parse optional -p / --port flag
@@ -19,7 +19,7 @@ ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -p|--port)
-      export RM_PORT="$2"
+      export RW_PORT="$2"
       shift 2
       ;;
     *)
@@ -35,20 +35,20 @@ RUN_DIR="$ROOT/.run"
 LOG_DIR="$ROOT/logs"
 PID_FILE="$RUN_DIR/prod.pid"
 LOG_FILE="$LOG_DIR/prod.log"
-SERVICE_NAME="resource-monitor"
+SERVICE_NAME="resourcewatch"
 FRONTEND_DIST="$ROOT/frontend/dist"
 
 mkdir -p "$RUN_DIR" "$LOG_DIR"
 
 # Resolves to the repo's debug/release layout (target/release/...) in a dev
-# checkout, or the flat layout deploy/install.sh copies into /opt/resource-monitor.
+# checkout, or the flat layout deploy/install.sh copies into /opt/resourcewatch.
 resolve_bin() {
-  if [[ -x "$ROOT/target/release/resource-monitor" ]]; then
-    echo "$ROOT/target/release/resource-monitor"
-  elif [[ -x "$ROOT/resource-monitor" ]]; then
-    echo "$ROOT/resource-monitor"
+  if [[ -x "$ROOT/target/release/resourcewatch" ]]; then
+    echo "$ROOT/target/release/resourcewatch"
+  elif [[ -x "$ROOT/resourcewatch" ]]; then
+    echo "$ROOT/resourcewatch"
   else
-    echo "$ROOT/target/release/resource-monitor"
+    echo "$ROOT/target/release/resourcewatch"
   fi
 }
 
@@ -94,7 +94,7 @@ standalone_start() {
   )
   sleep 1
   if is_alive; then
-    local port="${RM_PORT:-$(grep -A3 '^\[server\]' "$ROOT/config.toml" 2>/dev/null | grep '^port' | grep -o '[0-9]\+' | head -1)}"
+    local port="${RW_PORT:-$(grep -A3 '^\[server\]' "$ROOT/config.toml" 2>/dev/null | grep '^port' | grep -o '[0-9]\+' | head -1)}"
     echo "started (pid $(cat "$PID_FILE")) — http://127.0.0.1:${port:-8090}"
     echo "logs: $LOG_FILE"
   else

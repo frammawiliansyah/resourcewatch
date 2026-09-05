@@ -1,7 +1,7 @@
 use serde::Serialize;
+use starship_battery::Manager;
 use starship_battery::units::ratio::percent;
 use starship_battery::units::time::second;
-use starship_battery::Manager;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BatteryInfo {

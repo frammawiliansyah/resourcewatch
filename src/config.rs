@@ -92,8 +92,7 @@ fn env_val<T: std::str::FromStr>(key: &str) -> Option<T> {
 
 impl Config {
     pub fn load() -> Self {
-        let path =
-            std::env::var("RM_CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string());
+        let path = std::env::var("RW_CONFIG_PATH").unwrap_or_else(|_| "config.toml".to_string());
         let mut cfg: Config = match std::fs::read_to_string(&path) {
             Ok(raw) => match toml::from_str(&raw) {
                 Ok(cfg) => cfg,
@@ -112,26 +111,29 @@ impl Config {
     }
 
     fn apply_env_overrides(&mut self) {
-        if let Some(v) = env_val::<String>("RM_BIND_ADDR") {
+        if let Some(v) = env_val::<String>("RW_BIND_ADDR") {
             self.server.bind_addr = v;
         }
-        if let Some(v) = env_val::<u16>("RM_PORT") {
+        if let Some(v) = env_val::<u16>("RW_PORT") {
             self.server.port = v;
         }
-        if let Some(v) = env_val::<u64>("RM_POLL_INTERVAL_MS") {
+        if let Some(v) = env_val::<u64>("RW_POLL_INTERVAL_MS") {
             self.polling.poll_interval_ms = v;
         }
-        if let Some(v) = env_val::<u64>("RM_HISTORY_INTERVAL_SECS") {
+        if let Some(v) = env_val::<u64>("RW_HISTORY_INTERVAL_SECS") {
             self.polling.history_interval_secs = v;
         }
-        if let Some(v) = env_val::<u32>("RM_RETENTION_DAYS") {
+        if let Some(v) = env_val::<u32>("RW_RETENTION_DAYS") {
             self.retention.retention_days = v;
         }
-        if let Some(v) = env_val::<u64>("RM_CLEANUP_INTERVAL_SECS") {
+        if let Some(v) = env_val::<u64>("RW_CLEANUP_INTERVAL_SECS") {
             self.retention.cleanup_interval_secs = v;
         }
-        if let Some(v) = env_val::<String>("RM_DB_PATH") {
+        if let Some(v) = env_val::<String>("RW_DB_PATH") {
             self.database.path = v;
+        }
+        if let Some(v) = env_val::<String>("RW_STATIC_DIR") {
+            self.frontend.static_dir = v;
         }
     }
 }
