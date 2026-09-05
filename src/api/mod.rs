@@ -14,6 +14,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/health", get(rest::health))
         .route("/config", get(rest::config))
         .route("/snapshot", get(rest::snapshot))
+        .route("/fans", get(rest::fans))
         .route("/history", get(rest::history));
 
     let static_dir = &state.config.frontend.static_dir;

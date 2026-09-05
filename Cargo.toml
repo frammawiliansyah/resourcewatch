@@ -1,6 +1,6 @@
 [package]
 name = "resourcewatch"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Real-time system resource monitoring with WebSocket streaming, SQLite history, and a single-binary web dashboard"
 repository = "https://github.com/frammawiliansyah/resourcewatch"

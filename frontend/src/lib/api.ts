@@ -1,8 +1,14 @@
-import type { HistoryResponse, MetricKey, RangeKey, Snapshot } from './types'
+import type { FanReport, HistoryResponse, MetricKey, RangeKey, Snapshot } from './types'
 
 export async function fetchSnapshot(): Promise<Snapshot> {
   const res = await fetch('/api/snapshot')
   if (!res.ok) throw new Error(`GET /api/snapshot failed: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchFans(): Promise<FanReport> {
+  const res = await fetch('/api/fans')
+  if (!res.ok) throw new Error(`GET /api/fans failed: ${res.status}`)
   return res.json()
 }
 

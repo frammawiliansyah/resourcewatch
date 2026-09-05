@@ -1,6 +1,7 @@
 import { BatteryCard } from './components/cards/BatteryCard'
 import { CpuCard } from './components/cards/CpuCard'
 import { DiskIoCard } from './components/cards/DiskIoCard'
+import { FansCard } from './components/cards/FansCard'
 import { GpuCard } from './components/cards/GpuCard'
 import { NetworkCard } from './components/cards/NetworkCard'
 import { RamCard } from './components/cards/RamCard'
@@ -25,7 +26,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <CpuCard snapshot={snapshot} history={history} />
               <RamCard snapshot={snapshot} history={history} />
               <GpuCard snapshot={snapshot} history={history} />
@@ -33,6 +34,7 @@ export default function App() {
               <NetworkCard snapshot={snapshot} history={history} />
               <DiskIoCard snapshot={snapshot} history={history} />
               <TemperatureCard snapshot={snapshot} history={history} />
+              <FansCard snapshot={snapshot} history={history} />
               <BatteryCard snapshot={snapshot} history={history} />
             </div>
 

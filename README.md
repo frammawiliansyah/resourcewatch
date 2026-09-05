@@ -41,6 +41,7 @@ writes history to a local SQLite file.
 | **Storage** | Per-mount capacity and usage |
 | **Disk I/O** | Read/write throughput per second |
 | **Network** | Per-interface RX/TX throughput |
+| **Fans** | Fan RPM per sensor, control mode, and the firmware fan curve |
 | **Battery** | Charge percentage and charging status |
 | **Processes** | Top processes by CPU and memory |
 | **History** | SQLite-backed range queries with configurable retention |
@@ -51,7 +52,8 @@ writes history to a local SQLite file.
 - **Node.js** v18+ and npm
 - **Linux** (primary target) or **macOS**
 - *Optional:* NVIDIA driver for GPU metrics; `lm-sensors` on Linux for
-  temperature readings
+  temperature readings; `hwmon` fan sensors for fan RPM, which most laptops
+  expose and most desktops and VMs do not
 
 ---
 
@@ -167,6 +169,7 @@ unit and launchd agent use:
 | `/api/health` | `GET` | Status, version, uptime in seconds |
 | `/api/config` | `GET` | Effective runtime config and GPU availability |
 | `/api/snapshot` | `GET` | Latest full metric snapshot |
+| `/api/fans` | `GET` | Fan RPM, control mode, and firmware fan curve tables |
 | `/api/history` | `GET` | Historical series, see parameters below |
 | `/ws` | `WS` | Live snapshot stream, one JSON message per tick |
 
@@ -187,6 +190,37 @@ curl 'http://localhost:8090/api/history?metric=storage&mount=/'
 
 Requesting `metric=storage` without `mount` returns the list of available mount
 points instead of a series.
+
+### `GET /api/fans`
+
+Fan RPM also rides along in every snapshot and WebSocket message, so the
+dashboard updates it live. This endpoint adds the firmware fan curve, which is
+static configuration rather than a per-tick reading.
+
+```bash
+curl http://localhost:8090/api/fans
+```
+
+```json
+{
+  "available": true,
+  "control_mode": "custom curve",
+  "platform_profile": "performance",
+  "fans": [{ "label": "cpu_fan", "rpm": 5300 }],
+  "curves": [
+    {
+      "label": "cpu_fan",
+      "enabled": true,
+      "points": [{ "temp_c": 70, "pwm": 240, "pct": 94 }]
+    }
+  ]
+}
+```
+
+Sysfs is re-scanned on every request, so a curve changed from outside the
+process shows up without a restart. `hwmon` nodes are matched by driver name
+rather than by index, because index assignment follows probe order and can
+change between boots.
 
 ---
 
@@ -230,7 +264,7 @@ unit is installed it transparently delegates to `systemctl`.
 
 ```mermaid
 flowchart LR
-    HW[Hardware<br/>procfs / sysinfo / NVML] --> C[Collector<br/>tick every poll_interval_ms]
+    HW[Hardware<br/>procfs / sysfs / sysinfo / NVML] --> C[Collector<br/>tick every poll_interval_ms]
     C --> W[watch channel]
     C --> M[mpsc channel]
     W --> WS["/ws<br/>WebSocket fan-out"]
@@ -297,6 +331,17 @@ that succeeds but the service still reports no GPU, the dedicated
 On Linux install and configure `lm-sensors` (`sudo apt install lm-sensors &&
 sudo sensors-detect`). Inside containers and most VMs no sensors are exposed at
 all. macOS does not expose CPU temperature without elevated privileges.
+</details>
+
+<details>
+<summary><b>Fan card shows no sensors</b></summary>
+
+Fan RPM is read from `/sys/class/hwmon`. Check what your machine exposes with
+`grep . /sys/class/hwmon/*/fan*_input`. Laptops usually expose fans through a
+vendor driver, desktops often need `lm-sensors` with a superio driver such as
+`nct6775` loaded, and most VMs expose nothing at all. The curve section of the
+card only appears when the firmware also exposes `pwmN_auto_pointM_*` files,
+which is common on ASUS laptops and uncommon elsewhere.
 </details>
 
 <details>

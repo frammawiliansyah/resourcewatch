@@ -1,6 +1,7 @@
 pub mod battery;
 pub mod cpu;
 pub mod diskio;
+pub mod fans;
 pub mod gpu;
 pub mod network;
 pub mod processes;
@@ -22,6 +23,7 @@ pub struct Snapshot {
     pub network: network::NetworkInfo,
     pub disk_io: diskio::DiskIoInfo,
     pub battery: battery::BatteryInfo,
+    pub fans: fans::FanInfo,
     pub processes: processes::ProcessesInfo,
 }
 
@@ -31,6 +33,7 @@ pub struct Collector {
     networks: Networks,
     components: Components,
     gpu: gpu::GpuMonitor,
+    fans: fans::FanMonitor,
     battery: battery::BatteryMonitor,
     last_tick: Instant,
 }
@@ -43,6 +46,7 @@ impl Collector {
             networks: Networks::new_with_refreshed_list(),
             components: Components::new_with_refreshed_list(),
             gpu: gpu::GpuMonitor::new(),
+            fans: fans::FanMonitor::new(),
             battery: battery::BatteryMonitor::new(),
             last_tick: Instant::now(),
         }
@@ -72,6 +76,7 @@ impl Collector {
             network: network::collect(&self.networks, elapsed_secs),
             disk_io: diskio::collect(&self.disks, elapsed_secs),
             battery: self.battery.collect(),
+            fans: self.fans.collect(),
             processes: processes::collect(&self.sys),
         }
     }

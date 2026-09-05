@@ -70,6 +70,38 @@ export interface ProcessesInfo {
   top_mem: ProcessEntry[]
 }
 
+export interface FanReading {
+  label: string
+  rpm: number
+}
+
+export interface FanInfo {
+  available: boolean
+  fans: FanReading[]
+  control_mode: string | null
+  platform_profile: string | null
+}
+
+export interface CurvePoint {
+  temp_c: number
+  pwm: number
+  pct: number
+}
+
+export interface FanCurve {
+  label: string
+  enabled: boolean
+  points: CurvePoint[]
+}
+
+export interface FanReport {
+  available: boolean
+  fans: FanReading[]
+  control_mode: string | null
+  platform_profile: string | null
+  curves: FanCurve[]
+}
+
 export interface Snapshot {
   ts: number
   cpu: CpuInfo
@@ -80,6 +112,7 @@ export interface Snapshot {
   disk_io: DiskIoInfo
   battery: BatteryInfo
   processes: ProcessesInfo
+  fans: FanInfo
 }
 
 export type MetricKey =

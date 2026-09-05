@@ -1,4 +1,5 @@
 use crate::db;
+use crate::metrics::fans;
 use crate::error::AppError;
 use crate::state::AppState;
 use axum::Json;
@@ -25,6 +26,12 @@ pub async fn config(State(state): State<AppState>) -> Json<Value> {
         "port": state.config.server.port,
         "gpu_available": gpu_available,
     }))
+}
+
+/// Fan RPM plus the firmware curve tables. Re-read from sysfs on every
+/// request so curve changes made outside this process show up right away.
+pub async fn fans() -> Json<Value> {
+    Json(serde_json::to_value(fans::report()).unwrap_or(Value::Null))
 }
 
 pub async fn snapshot(State(state): State<AppState>) -> Json<Value> {
