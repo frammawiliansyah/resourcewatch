@@ -37,7 +37,7 @@ writes history to a local SQLite file.
 | **Live streaming** | WebSocket (`/ws`) push on every collector tick (default 1s) |
 | **CPU** | Aggregate + per-core utilisation, package temperature |
 | **Memory** | RAM and swap used/total/available |
-| **GPU** | NVIDIA via NVML: utilisation, VRAM, temperature, power draw, fan |
+| **GPU** | NVIDIA via NVML: utilisation, VRAM, temperature, power draw, fan, per-process usage; optional Intel iGPU per-process usage |
 | **Storage** | Per-mount capacity and usage |
 | **Disk I/O** | Read/write throughput per second |
 | **Network** | Per-interface RX/TX throughput |
@@ -264,6 +264,29 @@ Fans take up to ~30 seconds to spin down after switching to a lower mode. A
 flat duty doesn't cap temperature: under sustained load the CPU throttles
 instead.
 
+### Per-process GPU usage
+
+The GPU card lists which processes are using each GPU, so you can confirm a
+game really runs on the discrete card:
+
+- **NVIDIA**: read through NVML by the service itself (per-process 3D/compute
+  utilisation and VRAM). A game offloaded with `__NV_PRIME_RENDER_OFFLOAD=1`
+  shows up here.
+- **Intel**: per-client DRM usage lives in `/proc/<pid>/fdinfo`, which an
+  unprivileged service can't read for other users' processes, so an optional
+  helper publishes it instead:
+
+```bash
+cargo build --release
+sudo ./deploy/gpu-clients/install.sh
+```
+
+The helper (`resourcewatch-gpu-clients.service`) keeps only `CAP_SYS_PTRACE`
+and `CAP_DAC_READ_SEARCH`, has no network, and rewrites
+`/run/resourcewatch-gpu/intel-clients.json` every 2 seconds. Only the `i915`
+driver is supported. Both lists ride along in every snapshot as
+`gpu.processes` and `intel_gpu.processes`.
+
 ---
 
 ## Development
@@ -330,6 +353,7 @@ SQLite and periodically prunes rows past the retention window.
 resourcewatch/
 ├── src/
 │   ├── api/            # REST handlers + WebSocket stream
+│   ├── bin/            # resourcewatch-gpu-clients helper binary
 │   ├── db/             # SQLite schema, inserts, history queries
 │   ├── metrics/        # One collector module per metric family
 │   ├── config.rs       # Config file + env override resolution
@@ -339,6 +363,7 @@ resourcewatch/
 ├── deploy/
 │   ├── install.sh      # One-time cross-platform setup
 │   ├── fan-control/    # Optional ASUS fan-mode helper (root guard + polkit)
+│   ├── gpu-clients/    # Optional Intel per-process GPU usage reader
 │   ├── systemd/        # Linux service unit
 │   └── launchd/        # macOS agent template
 ├── scripts/

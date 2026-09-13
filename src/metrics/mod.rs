@@ -3,6 +3,7 @@ pub mod cpu;
 pub mod diskio;
 pub mod fans;
 pub mod gpu;
+pub mod intel_gpu;
 pub mod network;
 pub mod processes;
 pub mod ram;
@@ -19,6 +20,7 @@ pub struct Snapshot {
     pub cpu: cpu::CpuInfo,
     pub ram: ram::RamInfo,
     pub gpu: gpu::GpuInfo,
+    pub intel_gpu: intel_gpu::IntelGpuInfo,
     pub storage: storage::StorageInfo,
     pub network: network::NetworkInfo,
     pub disk_io: diskio::DiskIoInfo,
@@ -71,7 +73,8 @@ impl Collector {
             ts,
             cpu: cpu::collect(&self.sys, temp_c),
             ram: ram::collect(&self.sys),
-            gpu: self.gpu.collect(),
+            gpu: self.gpu.collect(&self.sys),
+            intel_gpu: intel_gpu::collect(),
             storage: storage::collect(&self.disks),
             network: network::collect(&self.networks, elapsed_secs),
             disk_io: diskio::collect(&self.disks, elapsed_secs),

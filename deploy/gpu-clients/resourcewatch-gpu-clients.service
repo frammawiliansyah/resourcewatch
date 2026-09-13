@@ -1,0 +1,31 @@
+[Unit]
+Description=ResourceWatch Intel GPU per-process usage reader
+
+[Service]
+Type=simple
+ExecStart=/usr/local/libexec/resourcewatch-gpu-clients
+Restart=always
+RestartSec=2
+RuntimeDirectory=resourcewatch-gpu
+RuntimeDirectoryMode=0755
+
+# Reading other users' /proc/<pid>/fd and fdinfo needs exactly these two
+# capabilities; everything else is stripped and the unit has no network.
+CapabilityBoundingSet=CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+NoNewPrivileges=true
+PrivateNetwork=true
+RestrictAddressFamilies=AF_UNIX
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

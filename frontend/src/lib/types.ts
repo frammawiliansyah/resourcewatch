@@ -21,6 +21,19 @@ export interface GpuInfo {
   temp_c: number | null
   power_w: number | null
   fan_pct: number | null
+  processes: GpuProcess[]
+}
+
+export interface GpuProcess {
+  pid: number
+  name: string
+  util_pct: number | null
+  mem_bytes: number | null
+}
+
+export interface IntelGpuInfo {
+  available: boolean
+  processes: GpuProcess[]
 }
 
 export interface MountInfo {
@@ -111,6 +124,7 @@ export interface Snapshot {
   cpu: CpuInfo
   ram: RamInfo
   gpu: GpuInfo
+  intel_gpu: IntelGpuInfo
   storage: StorageInfo
   network: NetworkInfo
   disk_io: DiskIoInfo
