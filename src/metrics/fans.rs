@@ -1,11 +1,13 @@
 //! Fan telemetry read straight from sysfs `hwmon`.
 //!
-//! Two separate things live here:
+//! Three separate things live here:
 //!
 //! * [`FanMonitor`]: per-tick RPM readings, part of every [`crate::metrics::Snapshot`].
 //! * [`report`]: an on-demand dump that also includes the firmware fan
 //!   curve, re-scanned on each call so edits made outside this process (via
 //!   `asusctl`, a systemd unit, or a manual sysfs write) show up immediately.
+//! * [`set_mode`]: switches the fan mode through the optional root helper in
+//!   `deploy/fan-control`, since this unprivileged process can't write sysfs.
 //!
 //! Everything degrades to "unavailable" rather than failing: laptops without
 //! hwmon fan sensors, desktops, VMs and non-Linux-ish setups all just report
@@ -14,9 +16,15 @@
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 const HWMON_ROOT: &str = "/sys/class/hwmon";
 const PLATFORM_PROFILE: &str = "/sys/firmware/acpi/platform_profile";
+
+/// Written by the `deploy/fan-control` helper; absent when it isn't installed.
+const FAN_MODE_FILE: &str = "/var/lib/fan-curve/mode";
+
+pub const FAN_MODES: &[&str] = &["auto", "50", "75", "100"];
 
 /// Firmware fan curves expose at most 8 points on the hardware we've seen;
 /// the loop stops early anyway once a point is missing.
@@ -39,6 +47,8 @@ pub struct FanInfo {
     /// ACPI platform profile (`quiet` / `balanced` / `performance`), which on
     /// most laptops selects which firmware fan curve is active.
     pub platform_profile: Option<String>,
+    /// Mode chosen through `deploy/fan-control`, `None` when it isn't installed.
+    pub mode: Option<String>,
 }
 
 impl FanInfo {
@@ -48,6 +58,7 @@ impl FanInfo {
             fans: Vec::new(),
             control_mode: None,
             platform_profile: None,
+            mode: None,
         }
     }
 }
@@ -75,6 +86,7 @@ pub struct FanReport {
     pub fans: Vec<FanReading>,
     pub control_mode: Option<String>,
     pub platform_profile: Option<String>,
+    pub mode: Option<String>,
     pub curves: Vec<FanCurve>,
 }
 
@@ -213,6 +225,25 @@ fn platform_profile() -> Option<String> {
     read_trimmed(Path::new(PLATFORM_PROFILE))
 }
 
+fn fan_mode() -> Option<String> {
+    read_trimmed(Path::new(FAN_MODE_FILE)).filter(|m| FAN_MODES.contains(&m.as_str()))
+}
+
+/// Starts the root-owned `fan-mode@<mode>.service`; the polkit rule shipped
+/// with it lets this service's user start only those exact instances.
+pub fn set_mode(mode: &str) -> Result<(), String> {
+    let unit = format!("fan-mode@{mode}.service");
+    let output = Command::new("systemctl")
+        .args(["start", "--no-ask-password", unit.as_str()])
+        .output()
+        .map_err(|e| format!("failed to run systemctl: {e}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
+    }
+}
+
 /// Caches the resolved `fanN_input` paths so each tick is just a handful of
 /// small reads instead of a full `/sys/class/hwmon` walk.
 pub struct FanMonitor {
@@ -257,6 +288,7 @@ impl FanMonitor {
             fans,
             control_mode: control_mode(&dirs),
             platform_profile: platform_profile(),
+            mode: fan_mode(),
         }
     }
 }
@@ -281,6 +313,7 @@ pub fn report() -> FanReport {
         fans,
         control_mode: control_mode(&dirs),
         platform_profile: platform_profile(),
+        mode: fan_mode(),
         curves,
     }
 }

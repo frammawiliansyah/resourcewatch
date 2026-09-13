@@ -10,6 +10,10 @@ impl AppError {
         Self(StatusCode::BAD_REQUEST, json!({ "error": msg.into() }))
     }
 
+    pub fn forbidden(msg: impl Into<String>) -> Self {
+        Self(StatusCode::FORBIDDEN, json!({ "error": msg.into() }))
+    }
+
     pub fn internal(msg: impl Into<String>) -> Self {
         Self(
             StatusCode::INTERNAL_SERVER_ERROR,

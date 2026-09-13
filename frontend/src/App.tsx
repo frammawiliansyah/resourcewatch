@@ -1,12 +1,11 @@
 import { BatteryCard } from './components/cards/BatteryCard'
 import { CpuCard } from './components/cards/CpuCard'
 import { DiskIoCard } from './components/cards/DiskIoCard'
-import { FansCard } from './components/cards/FansCard'
 import { GpuCard } from './components/cards/GpuCard'
 import { NetworkCard } from './components/cards/NetworkCard'
 import { RamCard } from './components/cards/RamCard'
 import { StorageCard } from './components/cards/StorageCard'
-import { TemperatureCard } from './components/cards/TemperatureCard'
+import { ThermalCard } from './components/cards/ThermalCard'
 import { Header } from './components/Header'
 import { HistoryPanel } from './components/HistoryPanel'
 import { ProcessesTable } from './components/ProcessesTable'
@@ -33,8 +32,7 @@ export default function App() {
               <StorageCard snapshot={snapshot} />
               <NetworkCard snapshot={snapshot} history={history} />
               <DiskIoCard snapshot={snapshot} history={history} />
-              <TemperatureCard snapshot={snapshot} history={history} />
-              <FansCard snapshot={snapshot} history={history} />
+              <ThermalCard snapshot={snapshot} history={history} />
               <BatteryCard snapshot={snapshot} history={history} />
             </div>
 

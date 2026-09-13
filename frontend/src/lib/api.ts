@@ -1,4 +1,4 @@
-import type { FanReport, HistoryResponse, MetricKey, RangeKey, Snapshot } from './types'
+import type { FanMode, FanReport, HistoryResponse, MetricKey, RangeKey, Snapshot } from './types'
 
 export async function fetchSnapshot(): Promise<Snapshot> {
   const res = await fetch('/api/snapshot')
@@ -9,6 +9,19 @@ export async function fetchSnapshot(): Promise<Snapshot> {
 export async function fetchFans(): Promise<FanReport> {
   const res = await fetch('/api/fans')
   if (!res.ok) throw new Error(`GET /api/fans failed: ${res.status}`)
+  return res.json()
+}
+
+export async function setFanMode(mode: FanMode): Promise<FanReport> {
+  const res = await fetch('/api/fans/mode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error ?? `POST /api/fans/mode failed: ${res.status}`)
+  }
   return res.json()
 }
 

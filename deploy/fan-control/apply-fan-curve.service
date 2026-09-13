@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply the saved ASUS fan mode and keep the custom curve enforced
+After=tlp.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/apply-fan-curve.sh guard
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

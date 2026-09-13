@@ -1,0 +1,7 @@
+[Unit]
+Description=Set ASUS fan mode to %i
+After=apply-fan-curve.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/apply-fan-curve.sh set %i

@@ -3,7 +3,7 @@ pub mod ws;
 
 use crate::state::AppState;
 use axum::Router;
-use axum::routing::get;
+use axum::routing::{get, post};
 use tower_http::compression::CompressionLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::services::{ServeDir, ServeFile};
@@ -15,6 +15,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/config", get(rest::config))
         .route("/snapshot", get(rest::snapshot))
         .route("/fans", get(rest::fans))
+        .route("/fans/mode", post(rest::set_fan_mode))
         .route("/history", get(rest::history));
 
     let static_dir = &state.config.frontend.static_dir;

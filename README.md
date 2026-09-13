@@ -41,7 +41,7 @@ writes history to a local SQLite file.
 | **Storage** | Per-mount capacity and usage |
 | **Disk I/O** | Read/write throughput per second |
 | **Network** | Per-interface RX/TX throughput |
-| **Fans** | Fan RPM per sensor, control mode, and the firmware fan curve |
+| **Fans** | Fan RPM per sensor, control mode, firmware fan curve, and optional Auto/50%/75%/100% fan modes on ASUS laptops |
 | **Battery** | Charge percentage and charging status |
 | **Processes** | Top processes by CPU and memory |
 | **History** | SQLite-backed range queries with configurable retention |
@@ -170,6 +170,7 @@ unit and launchd agent use:
 | `/api/config` | `GET` | Effective runtime config and GPU availability |
 | `/api/snapshot` | `GET` | Latest full metric snapshot |
 | `/api/fans` | `GET` | Fan RPM, control mode, and firmware fan curve tables |
+| `/api/fans/mode` | `POST` | Switch fan mode (`auto`, `50`, `75`, `100`), localhost only, see [fan control](#fan-control-asus-laptops) |
 | `/api/history` | `GET` | Historical series, see parameters below |
 | `/ws` | `WS` | Live snapshot stream, one JSON message per tick |
 
@@ -206,6 +207,7 @@ curl http://localhost:8090/api/fans
   "available": true,
   "control_mode": "custom curve",
   "platform_profile": "performance",
+  "mode": "auto",
   "fans": [{ "label": "cpu_fan", "rpm": 5300 }],
   "curves": [
     {
@@ -221,6 +223,46 @@ Sysfs is re-scanned on every request, so a curve changed from outside the
 process shows up without a restart. `hwmon` nodes are matched by driver name
 rather than by index, because index assignment follows probe order and can
 change between boots.
+
+### Fan control (ASUS laptops)
+
+On ASUS laptops using the `asus-wmi` custom fan curve driver, the dashboard's
+**Temperature & Fans** card can switch between four fan modes:
+
+| Mode | Behaviour |
+|---|---|
+| `auto` | Temperature-driven curve, defined in `deploy/fan-control/apply-fan-curve.sh` |
+| `50` / `75` / `100` | Flat PWM duty at that percentage, regardless of temperature |
+
+ResourceWatch runs unprivileged and can't write sysfs, so the writes are done
+by a small root helper installed separately:
+
+```bash
+sudo ./deploy/fan-control/install.sh
+```
+
+It installs:
+
+- `apply-fan-curve.service`: applies the saved mode at boot, and re-applies it
+  within 2 seconds whenever the firmware resets the custom curve. Any
+  `platform_profile` write does that, e.g. TLP on an AC/battery switch or Fn+F5.
+- `fan-mode@.service`: a one-shot unit that saves and applies a mode.
+- A polkit rule letting the `resourcewatch` user start only
+  `fan-mode@{auto,50,75,100}.service`.
+
+The chosen mode persists across reboots in `/var/lib/fan-curve/mode`.
+`POST /api/fans/mode` is only honoured for requests made on the machine itself
+(loopback peer, `localhost` Host header, no Cloudflare headers), so a dashboard
+reachable over the LAN or published through a tunnel stays read-only.
+
+```bash
+curl -X POST http://localhost:8090/api/fans/mode \
+  -H 'Content-Type: application/json' -d '{"mode":"75"}'
+```
+
+Fans take up to ~30 seconds to spin down after switching to a lower mode. A
+flat duty doesn't cap temperature: under sustained load the CPU throttles
+instead.
 
 ---
 
@@ -296,6 +338,7 @@ resourcewatch/
 ├── frontend/           # React 19 + TypeScript + Vite + Tailwind v4
 ├── deploy/
 │   ├── install.sh      # One-time cross-platform setup
+│   ├── fan-control/    # Optional ASUS fan-mode helper (root guard + polkit)
 │   ├── systemd/        # Linux service unit
 │   └── launchd/        # macOS agent template
 ├── scripts/
@@ -334,7 +377,7 @@ all. macOS does not expose CPU temperature without elevated privileges.
 </details>
 
 <details>
-<summary><b>Fan card shows no sensors</b></summary>
+<summary><b>Temperature & Fans card shows no fan sensors</b></summary>
 
 Fan RPM is read from `/sys/class/hwmon`. Check what your machine exposes with
 `grep . /sys/class/hwmon/*/fan*_input`. Laptops usually expose fans through a
@@ -342,6 +385,16 @@ vendor driver, desktops often need `lm-sensors` with a superio driver such as
 `nct6775` loaded, and most VMs expose nothing at all. The curve section of the
 card only appears when the firmware also exposes `pwmN_auto_pointM_*` files,
 which is common on ASUS laptops and uncommon elsewhere.
+</details>
+
+<details>
+<summary><b>Fan mode buttons are missing or disabled</b></summary>
+
+The buttons only appear once `deploy/fan-control/install.sh` has run (they read
+`/var/lib/fan-curve/mode`), and they're disabled unless the dashboard is opened
+via `localhost`. If clicking a mode shows an error, check
+`journalctl -u apply-fan-curve -u 'fan-mode@*'` and that the polkit rule exists
+in `/etc/polkit-1/rules.d/`.
 </details>
 
 <details>

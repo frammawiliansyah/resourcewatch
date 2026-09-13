@@ -8,6 +8,7 @@ mod state;
 
 use config::Config;
 use state::AppState;
+use std::net::SocketAddr;
 use std::time::{Duration, Instant};
 use tokio::sync::{mpsc, watch};
 
@@ -76,10 +77,13 @@ async fn main() {
         .unwrap_or_else(|e| panic!("failed to bind {addr}: {e}"));
     tracing::info!("listening on {addr}");
 
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .expect("server error");
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown_signal())
+    .await
+    .expect("server error");
 }
 
 async fn shutdown_signal() {

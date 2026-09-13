@@ -70,6 +70,8 @@ export interface ProcessesInfo {
   top_mem: ProcessEntry[]
 }
 
+export type FanMode = 'auto' | '50' | '75' | '100'
+
 export interface FanReading {
   label: string
   rpm: number
@@ -80,6 +82,7 @@ export interface FanInfo {
   fans: FanReading[]
   control_mode: string | null
   platform_profile: string | null
+  mode: FanMode | null
 }
 
 export interface CurvePoint {
@@ -99,6 +102,7 @@ export interface FanReport {
   fans: FanReading[]
   control_mode: string | null
   platform_profile: string | null
+  mode: FanMode | null
   curves: FanCurve[]
 }
 

@@ -1,0 +1,10 @@
+// Lets ResourceWatch's service user switch fan modes without root: only
+// "start" of the four fan-mode@ instances is allowed, nothing else.
+polkit.addRule(function (action, subject) {
+    if (action.id === "org.freedesktop.systemd1.manage-units" &&
+        subject.user === "resourcewatch" &&
+        action.lookup("verb") === "start" &&
+        /^fan-mode@(auto|50|75|100)\.service$/.test(action.lookup("unit"))) {
+        return polkit.Result.YES;
+    }
+});

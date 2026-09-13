@@ -3,9 +3,11 @@ use crate::error::AppError;
 use crate::metrics::fans;
 use crate::state::AppState;
 use axum::Json;
-use axum::extract::{Query, State};
+use axum::extract::{ConnectInfo, Query, State};
+use axum::http::{HeaderMap, header};
 use serde::Deserialize;
 use serde_json::{Value, json};
+use std::net::SocketAddr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub async fn health(State(state): State<AppState>) -> Json<Value> {
@@ -32,6 +34,56 @@ pub async fn config(State(state): State<AppState>) -> Json<Value> {
 /// request so curve changes made outside this process show up right away.
 pub async fn fans() -> Json<Value> {
     Json(serde_json::to_value(fans::report()).unwrap_or(Value::Null))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FanModeBody {
+    pub mode: String,
+}
+
+/// The dashboard may also be published through a tunnel (e.g. Cloudflare),
+/// whose requests arrive from loopback too, so the Host and Cloudflare
+/// headers are checked as well as the peer address.
+fn is_local_request(peer: SocketAddr, headers: &HeaderMap) -> bool {
+    if !peer.ip().is_loopback() || headers.contains_key("cf-connecting-ip") {
+        return false;
+    }
+    let Some(host) = headers.get(header::HOST).and_then(|h| h.to_str().ok()) else {
+        return false;
+    };
+    let hostname = match host.strip_prefix('[') {
+        Some(rest) => rest.split(']').next().unwrap_or(rest),
+        None => host.split(':').next().unwrap_or(host),
+    };
+    matches!(hostname, "localhost" | "127.0.0.1" | "::1")
+}
+
+pub async fn set_fan_mode(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+    Json(body): Json<FanModeBody>,
+) -> Result<Json<Value>, AppError> {
+    if !is_local_request(peer, &headers) {
+        return Err(AppError::forbidden(
+            "fan control is only available from localhost",
+        ));
+    }
+    if !fans::FAN_MODES.contains(&body.mode.as_str()) {
+        return Err(AppError::bad_request(format!(
+            "unknown fan mode '{}', expected one of {:?}",
+            body.mode,
+            fans::FAN_MODES
+        )));
+    }
+
+    tokio::task::spawn_blocking(move || fans::set_mode(&body.mode))
+        .await
+        .map_err(|e| AppError::internal(e.to_string()))?
+        .map_err(AppError::internal)?;
+
+    Ok(Json(
+        serde_json::to_value(fans::report()).unwrap_or(Value::Null),
+    ))
 }
 
 pub async fn snapshot(State(state): State<AppState>) -> Json<Value> {
