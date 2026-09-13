@@ -66,10 +66,10 @@ apply_mode() {
     hwmon=$(find_hwmon)
     case "$1" in
         auto)
-            # pwm1 = CPU fan (starts at 30%), pwm2 = GPU fan (starts at 25%). Linear
+            # pwm1 = CPU fan (starts at 35%), pwm2 = GPU fan (starts at 30%). Linear
             # ramp 30-55C, aggressive 55-70C, pinned at 100% from 70C up.
-            write_curve "$hwmon" pwm1 "30:77 40:98 50:119 55:130 60:172 65:213 70:255 80:255"
-            write_curve "$hwmon" pwm2 "30:64 40:90 50:117 55:130 60:172 65:213 70:255 80:255"
+            write_curve "$hwmon" pwm1 "30:90 40:110 50:131 55:130 60:172 65:213 70:255 80:255"
+            write_curve "$hwmon" pwm2 "30:77 40:102 50:128 55:130 60:172 65:213 70:255 80:255"
             ;;
         50)
             write_curve "$hwmon" pwm1 "$(flat_curve 128)"
