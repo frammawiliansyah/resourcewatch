@@ -69,8 +69,16 @@ ensure_built() {
   fi
 }
 
+# Matched by binary/comm name rather than the PID file alone, so stray
+# instances (started manually, from a stale checkout, or left behind by an
+# earlier script invocation whose PID file got overwritten) are never
+# invisible to stop/restart.
+running_pids() {
+  pgrep -x "$(basename "$(resolve_bin)")" 2>/dev/null || true
+}
+
 is_alive() {
-  [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
+  [[ -n "$(running_pids)" ]]
 }
 
 systemd_installed() {
@@ -81,7 +89,7 @@ systemd_installed() {
 standalone_start() {
   ensure_built
   if is_alive; then
-    echo "already running (pid $(cat "$PID_FILE"))"
+    echo "already running (pid $(running_pids | tr '\n' ' '))"
     return
   fi
   rm -f "$PID_FILE"
@@ -104,20 +112,26 @@ standalone_start() {
 }
 
 standalone_stop() {
-  if ! is_alive; then
+  local pids
+  pids="$(running_pids)"
+  if [[ -z "$pids" ]]; then
     echo "not running"
     rm -f "$PID_FILE"
     return
   fi
-  local pid
-  pid="$(cat "$PID_FILE")"
-  kill -TERM "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
+  echo "stopping resourcewatch (pid: $(echo "$pids" | tr '\n' ' '))"
+  local p
+  for p in $pids; do
+    kill -TERM "-$p" 2>/dev/null || kill -TERM "$p" 2>/dev/null || true
+  done
   for _ in $(seq 1 25); do
     is_alive || break
     sleep 0.2
   done
   if is_alive; then
-    kill -KILL "-$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null || true
+    for p in $(running_pids); do
+      kill -KILL "-$p" 2>/dev/null || kill -KILL "$p" 2>/dev/null || true
+    done
   fi
   rm -f "$PID_FILE"
   echo "stopped"
@@ -125,7 +139,7 @@ standalone_stop() {
 
 standalone_status() {
   if is_alive; then
-    echo "running (pid $(cat "$PID_FILE"))"
+    echo "running (pid $(running_pids | tr '\n' ' '))"
   else
     echo "stopped"
   fi
@@ -159,13 +173,17 @@ case "$cmd" in
   stop)
     if systemd_installed; then
       sudo systemctl stop "$SERVICE_NAME"
+      standalone_stop # sweep any stray instance systemd doesn't know about
     else
       standalone_stop
     fi
     ;;
   restart)
     if systemd_installed; then
-      sudo systemctl restart "$SERVICE_NAME"
+      sudo systemctl stop "$SERVICE_NAME"
+      standalone_stop # sweep any stray instance systemd doesn't know about
+      sudo systemctl start "$SERVICE_NAME"
+      systemctl status "$SERVICE_NAME" --no-pager
     else
       standalone_stop
       standalone_start
