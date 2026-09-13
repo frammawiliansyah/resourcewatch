@@ -29,13 +29,13 @@ export default function App() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <CpuCard snapshot={snapshot} history={history} />
               <RamCard snapshot={snapshot} history={history} />
-              <GpuCard snapshot={snapshot} history={history} />
+              <BatteryCard snapshot={snapshot} history={history} />
               <StorageCard snapshot={snapshot} />
               <NetworkCard snapshot={snapshot} history={history} />
               <DiskIoCard snapshot={snapshot} history={history} />
               <ThermalCard snapshot={snapshot} history={history} />
               <FanCurveCard snapshot={snapshot} />
-              <BatteryCard snapshot={snapshot} history={history} />
+              <GpuCard snapshot={snapshot} history={history} />
             </div>
 
             <ProcessesTable snapshot={snapshot} />
