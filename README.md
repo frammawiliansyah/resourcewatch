@@ -382,8 +382,8 @@ all. macOS does not expose CPU temperature without elevated privileges.
 Fan RPM is read from `/sys/class/hwmon`. Check what your machine exposes with
 `grep . /sys/class/hwmon/*/fan*_input`. Laptops usually expose fans through a
 vendor driver, desktops often need `lm-sensors` with a superio driver such as
-`nct6775` loaded, and most VMs expose nothing at all. The curve section of the
-card only appears when the firmware also exposes `pwmN_auto_pointM_*` files,
+`nct6775` loaded, and most VMs expose nothing at all. The Fan Curve card only
+shows curves when the firmware also exposes `pwmN_auto_pointM_*` files,
 which is common on ASUS laptops and uncommon elsewhere.
 </details>
 

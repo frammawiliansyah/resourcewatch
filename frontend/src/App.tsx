@@ -1,6 +1,7 @@
 import { BatteryCard } from './components/cards/BatteryCard'
 import { CpuCard } from './components/cards/CpuCard'
 import { DiskIoCard } from './components/cards/DiskIoCard'
+import { FanCurveCard } from './components/cards/FanCurveCard'
 import { GpuCard } from './components/cards/GpuCard'
 import { NetworkCard } from './components/cards/NetworkCard'
 import { RamCard } from './components/cards/RamCard'
@@ -33,6 +34,7 @@ export default function App() {
               <NetworkCard snapshot={snapshot} history={history} />
               <DiskIoCard snapshot={snapshot} history={history} />
               <ThermalCard snapshot={snapshot} history={history} />
+              <FanCurveCard snapshot={snapshot} />
               <BatteryCard snapshot={snapshot} history={history} />
             </div>
 

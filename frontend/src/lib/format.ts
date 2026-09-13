@@ -17,6 +17,12 @@ export function formatPct(value: number | null | undefined, decimals = 0): strin
   return `${value.toFixed(decimals)}%`
 }
 
+/** `cpu_fan` -> `CPU fan`, `asus fan1` -> `Asus fan1`. */
+export function formatFanLabel(label: string): string {
+  const spaced = label.replace(/_/g, ' ')
+  return spaced.replace(/\b(cpu|gpu)\b/gi, (m) => m.toUpperCase()).replace(/^./, (c) => c.toUpperCase())
+}
+
 export function formatTemp(celsius: number | null | undefined): string {
   if (celsius === null || celsius === undefined) return '—'
   return `${celsius.toFixed(0)}°C`
