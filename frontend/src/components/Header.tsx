@@ -1,7 +1,15 @@
-import { Activity } from 'lucide-react'
+import { Activity, Maximize2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-export function Header({ connected, lastTs }: { connected: boolean; lastTs: number | null }) {
+export function Header({
+  connected,
+  lastTs,
+  onFullscreen,
+}: {
+  connected: boolean
+  lastTs: number | null
+  onFullscreen?: () => void
+}) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -25,6 +33,17 @@ export function Header({ connected, lastTs }: { connected: boolean; lastTs: numb
         <span>{connected ? 'Live' : 'Reconnecting...'}</span>
         {secondsAgo !== null && (
           <span className="hidden sm:inline">· updated {secondsAgo}s ago</span>
+        )}
+        {onFullscreen && (
+          <button
+            type="button"
+            onClick={onFullscreen}
+            title="Fullscreen (F)"
+            aria-label="Enter fullscreen"
+            className="ml-2 cursor-pointer rounded-md border border-[var(--border)] p-1.5 hover:bg-[var(--surface-raised)] hover:text-[var(--text)]"
+          >
+            <Maximize2 size={14} />
+          </button>
         )}
       </div>
     </header>
